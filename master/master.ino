@@ -1,21 +1,55 @@
-void setup() {
-  // put your setup code here, to run once:
-  allActive();
-  receiveMaze();
-}
+#include <SoftwareSerial.h>
+#include <Button.h>
 
+SoftwareSerial xBee(2, 3);
+
+String buff;
+
+//SETUP
+void setup() {
+  Serial.begin(9600);
+  xBee.begin(9600);
+
+  //check that the two subunits are running
+  bool allActive = allActive();
+
+  //buffer for the String
+  buff = "";
+
+//MAIN LOOP
 void loop() {
   // put your main code here, to run repeatedly:
   int move = waitForMove();
   sendMove(move);
 }
 
-bool allActive() {
-  //WRITE "LOOKING FOR UNITS"
-  //CHECK PLAYER UNIT
-  //CHECK DM UNIT
-  //WAIT IF FAIL THEN LOOP
-  return true;
+//check if all the units are nearby
+void allActive() {
+
+  Serial.println("Looking for units...")
+  bool dm_unit_exists = false;
+  bool player_unit_exists = false;
+
+  while (!dm_unit_exists && !player_unit_exists) {
+    if (!dm_unit_exists) {
+      if (xBee.available() > 0) {
+        if (isAlphaNumeric(c) || c == ' ') {
+          buff = buff + c;
+        } else {
+          if (buff.equals("player_available")) {
+            player_unit_exists = true;
+          }
+          if (buff.equals("dm_available")) {
+            player_unit_exists = true;
+          }
+          buff = "";
+        }
+      }
+    }
+  }
+
+  //at this poin, both units are known to be working
+  xBee.println("master_unit_ready");
 }
 
 bool receiveMaze() {
@@ -36,4 +70,3 @@ int sendMove(int move) {
   //RETURN POSITION
   //0 INVALID 1 VALID 2 VALID+EFFECT
 }
-
