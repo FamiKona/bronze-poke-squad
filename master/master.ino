@@ -53,6 +53,7 @@ void allActive() {
 
   //at this poin, both units are known to be working
   xBee.println("master_unit_ready");
+  //PRINT READY TO DISPLAYS
 }
 
 int waitForMove() {
