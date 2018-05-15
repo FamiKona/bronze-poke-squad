@@ -1,7 +1,6 @@
 void setup() {
   // put your setup code here, to run once:
   allActive();
-  receiveMaze();
 }
 
 void loop() {
@@ -15,11 +14,6 @@ bool allActive() {
   //CHECK PLAYER UNIT
   //CHECK DM UNIT
   //WAIT IF FAIL THEN LOOP
-  return true;
-}
-
-bool receiveMaze() {
-  //RECIEVE MAZE OUTLINE FOR CHECKING PURPOSES
   return true;
 }
 
@@ -37,3 +31,6 @@ int sendMove(int move) {
   //0 INVALID 1 VALID 2 VALID+EFFECT
 }
 
+bool battle(/*POKEMON*/) {
+  
+}
