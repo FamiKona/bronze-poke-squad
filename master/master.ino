@@ -8,7 +8,6 @@ String buff;
 //SETUP
 void setup() {
   // put your setup code here, to run once:
-  allActive();
   Serial.begin(9600);
   xBee.begin(9600);
 
