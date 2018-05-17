@@ -6,7 +6,6 @@ Adafruit_LiquidCrystal lcd(0);
 // We'll use SoftwareSerial to communicate with the XBee:
 #include <SoftwareSerial.h>
 
-
 // XBee's DOUT (TX) is connected to pin 2 (Arduino's Software RX)
 // XBee's DIN (RX) is connected to pin 3 (Arduino's Software TX)
 SoftwareSerial xbee(2, 3); // RX, TX
@@ -17,7 +16,9 @@ int joyPin1 = 0;                 // slider variable connecetd to analog pin 0
  int value1 = 0;                  // variable to read the value from the analog pin 0
  int value2 = 0;                  // variable to read the value from the analog pin 1
 
+// pull in the move set 
 String moveSet[4]={"wind", "fire", "water", "ground"};
+int moveCurr = 0;
 
 void setup() {
   // Set up both ports at 9600 baud. This value is most important
@@ -37,7 +38,7 @@ void setup() {
   lcd.print("Move Name:");
   lcd.print(moveSet[0]);
   lcd.setCursor(0,1);
-
+  
 }
 
 // Function that calculates the joystick position values
@@ -75,9 +76,8 @@ void loop() {
     lcd.setCursor(0,1);
 //    Serial.println("Button B/Cancel");
   }
-   
   // END OF BUTTON //
-
+  
   // x BEE //
   // send character via XBee to other XBee connected to Mac
   // via USB cable
@@ -95,6 +95,10 @@ void loop() {
 //  // END OF X BEE //
 
   // JOYSTICK //
+
+  // UP/DOWN // value1: 48 down, 52 neutral, 56 up
+  // LEFT/RIGHT // value2: 48 left, 52 neutral, 56 right
+  
   // reads the value of the variable resistor 
   value1 = analogRead(joyPin1);   
   // this small pause is needed between reading
@@ -103,10 +107,52 @@ void loop() {
   // reads the value of the variable resistor 
   value2 = analogRead(joyPin2);   
 
+  int vertiMove = treatValue(value1);
+  int horiMove = treatValue(value2);
+  
   Serial.print("UP/DOWN 1: ");
-  Serial.print(treatValue(value1));
+  Serial.print(horiMove);
   Serial.print("    L/R 2: ");
-  Serial.println(treatValue(value2));
+  Serial.println(vertiMove);
+
+  // MOVE SELECTING -- prescribe a state
+  if (horiMove == 48) {
+    lcd.setCursor(0,1);
+    moveCurr -= 1;
+    delay(300);
+    if (moveCurr == -1) {
+      moveCurr = 0;
+    }
+    lcd.print(moveSet[moveCurr]);
+    lcd.setCursor(0,1);
+  } else if (horiMove == 56) {
+    lcd.setCursor(0,1);
+    moveCurr += 1;
+    delay(300);
+    if (moveCurr == 4) {
+      moveCurr = 3;
+    }
+    lcd.print(moveSet[moveCurr]);
+    lcd.setCursor(0,1);
+  }
+
+  // MOVING AROUND -- exiting prescribed "battle" state
+  if (horiMove == 48) {
+    lcd.print("left");
+    lcd.setCursor(0,1);
+  } else if (horiMove == 56) {
+    lcd.print("right");
+    lcd.setCursor(0,1);
+  }
+
+  // tracking vertical movement
+  if (vertiMove == 48) {
+    lcd.print("down");
+    lcd.setCursor(0,1);
+  } else if (vertiMove == 56) {
+    lcd.print("up");
+    lcd.setCursor(0,1);
+  }
 
   //END OF JOYSTICK //
   
