@@ -72,6 +72,7 @@ int sendMove(int move) {
 
 bool battle(Pokemon alpha, Pokemon beta) {
   return true;
+  //true is victory, false is loss
 }
 
 class Pokemon
