@@ -70,8 +70,8 @@ int sendMove(int move) {
   //0 INVALID 1 VALID 2 VALID+EFFECT
 }
 
-bool battle(/*POKEMON*/) {
-  
+bool battle(Pokemon alpha, Pokemon beta) {
+  return true;
 }
 
 class Pokemon
