@@ -27,39 +27,91 @@ void loop() {
 
 //check if all the units are nearby
 void allActive() {
-
   Serial.println("Looking for units...")
   bool dm_unit_exists = false;
   bool player_unit_exists = false;
 
   while (!dm_unit_exists && !player_unit_exists) {
-    if (!dm_unit_exists) {
-      if (xBee.available() > 0) {
-        if (isAlphaNumeric(c) || c == ' ') {
-          buff = buff + c;
-        } else {
-          if (buff.equals("player_available")) {
-            player_unit_exists = true;
-          }
-          if (buff.equals("dm_available")) {
-            player_unit_exists = true;
-          }
-          buff = "";
-        }
+    checkMessageReceived();
+    if (msgComplete) {
+      if (msg.equals("dm_unit_ready")) {
+        dm_unit_exists = true;
+      } else if (msg.equals("player_unit_ready")) {
+        player_unit_exists = true;
       }
+      msgComplete = false;
+      msg = "";
     }
   }
-
-  //at this poin, both units are known to be working
+  //at this point, both units are known to be working
   xBee.println("master_unit_ready");
   //PRINT READY TO DISPLAYS
   Serial.println("READY!");
 }
 
+void checkMessageReceived() {
+  if (xBee.available()) {
+    byte ch = xBee.read();
+    if (ch == newLineChar) {
+      msgComplete = true;
+    } else {
+      msg += char(ch);
+    }
+  }
+}
+
 int waitForMove() {
-  //WRITE "WAITING FOR MOVE"
-  //LOOP CHECK FOR VALID MOVE code
-  //RETURN MOVE
+  Serial.print("Waiting for move...")
+
+
+  msg = "";
+  int currMove = getMove();
+
+  return currMove;
+}
+
+// INTERNAL METHOD //
+// this method receives the message from the player module
+// and returns the appropriate integer
+int getMove(){
+  bool isValidMove = false;
+  int move = 0;
+
+  while (!isValidMove){
+    checkMessageReceived(); //get the new message as it comes
+    if (msgComplete) {
+      if (msg.equals("up")) {
+        move = 1;
+        Serial.println("Received move: UP");
+      } else if (msg.equals("dn")) {
+        move = 2;
+        Serial.println("Received move: DOWN");
+      } else if (msg.equals("lf")) {
+        move = 3;
+        Serial.println("Received move: LEFT");
+      } else if (msg.equals("rt")) {
+        move = 4;
+        Serial.println("Received move: RIGHT");
+      } else if (msg.equals("m1")) {
+        move = 5;
+        Serial.println("Received move: MOVE 1");
+      } else if (msg.equals("m2")) {
+        move = 6;
+        Serial.println("Received move: MOVE 2");
+      } else if (msg.equals("m3")) {
+        move = 7;
+        Serial.println("Received move: MOVE 3");
+      } else if (msg.equals("m4")) {
+        move = 8;
+        Serial.println("Received move: MOVE 4");
+      }
+      msgComplete = false; //end of the msg
+      msg = ""; //reset the global msg
+      isValidMove = true; //exit while
+    }
+  }
+
+  return move;
 }
 
 int sendMove(int move) {
