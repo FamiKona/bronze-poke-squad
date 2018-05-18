@@ -76,6 +76,7 @@ int waitForMove() {
 int getMove(){
   bool isValidMove = false;
   int move = 0;
+  msg = ""; //make sure the buffer is empty first
 
   while (!isValidMove){
     checkMessageReceived(); //get the new message as it comes
@@ -115,9 +116,44 @@ int getMove(){
 }
 
 int sendMove(int move) {
-  //WrITE SENDING
-  //SEND AND CONFIRM
-  //WAIT FOR RESPONSE
+
+
+  bool confirmSend = false;
+  msg = ""; //make sure the buffer is empty first
+
+  while (!confirmSend) { //not confirmed that the receiving unit has received it
+    xBee.println(move);
+    Serial.println("Sending move...");
+    Serial.println("Waiting for move to be received...");
+    unsigned long startTime = millis();
+    unsigned long timeOut = 5000; //5-second timeout
+
+    while (!msgComplete) {
+      checkMessageReceived();
+      if (msgComplete) {
+        if (msg.equals("move_received")) {
+          Serial.println("Move Received by Player Unit...")
+          msgComplete = false;
+          msg = "";
+          confirmSend = true;
+        } else {
+          msg = "";
+        }
+      } else {
+        if ((millis() - startTime) > timeOut) {
+          //if it has exceeded the timeout time, perhaps the player unit did not receive it.
+          //break the msgComplete while loop to restart the confirmSend while loop
+          //to re-send the move
+          msg = "";
+          break;
+        }
+      }
+    }
+  }
+  //at this point it has been confirmed that the move has been received by the player unit
+
+
+
   //RETURN POSITION
   //0 INVALID 1 VALID 2 VALID+EFFECT
 }
