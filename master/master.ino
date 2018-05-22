@@ -205,6 +205,7 @@ Pokemon::Pokemon(String typep, String namep, int maxHPp, Move m1, Move m2, Move 
     type = typep;
     name = namep;
     maxHP = maxHPp;
+    currentHP = maxHP;
     if (m1 == null) {
       move1 = Move("Tackle", "Normal", 40);
     }
