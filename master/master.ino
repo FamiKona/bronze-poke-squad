@@ -162,29 +162,55 @@ int sendMove(int move) {
   //0 INVALID 1 VALID 2 VALID+EFFECT
 }
 
-//bool battle(Pokemon alpha, Pokemon beta) {
-//  return true;
-//  //true is victory, false is loss
-//}
+/*
+class Move
+{
+  public:
+    String name;
+    String type;
+    int damage;
+    Move();
+}
 
-//class Pokemon
-//{
-//    public:
-//        String type;
-//        String type2;
-//        String name;
-//        int maxHP;
-//        int currentHP;
-//        String move1;
-//        String move2;
-//        String move3;
-//        String move4;
-//        Pokemon();
-//};
-//
-//Pokemon::Pokemon(String typep, String namep, int maxHPp) {
-//    type = typep;
-//    name = namep;
-//    maxHP = maxHPp;
-//    move1 = "tackle";
-//}
+Move:Move(String namep, String typep, int damagep){
+  name = namep;
+  type = typep;
+  damage = damagep;
+}
+*/
+
+/*
+bool battle(Pokemon alpha, Pokemon beta) {
+  return true;
+  //true is victory, false is loss
+}
+
+class Pokemon
+{
+    public:
+        String type;
+        String type2;
+        String name;
+        int maxHP;
+        int currentHP;
+        String move1;
+        String move2;
+        String move3;
+        String move4;
+        Pokemon();
+        take();
+};
+
+Pokemon::Pokemon(String typep, String namep, int maxHPp) {
+    type = typep;
+    name = namep;
+    maxHP = maxHPp;
+    move1 = Move("Tackle", "Normal", 40);
+}
+
+Pokemon:take(Pokemon pokemon, Move move) {
+  int dmg = move.damage
+  //MODIFY DAMAGE BASED ON TYPING
+  this.currentHP = this.currentHP - dmg; 
+}
+*/
