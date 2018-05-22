@@ -163,6 +163,7 @@ int sendMove(int move) {
 }
 
 bool battle(Pokemon hmn, Pokemon cpu) {
+  //MOVE CYCLE
   if (cpu.ko) {
     return true;
   }
@@ -170,7 +171,7 @@ bool battle(Pokemon hmn, Pokemon cpu) {
     return false;
   }
   else {
-  return true;
+  return true; //recursive here? battle(hmn, cpu)
   }
   //true is victory, false is loss
 }
@@ -230,9 +231,12 @@ Pokemon::Pokemon(String typep, String namep, int maxHPp, Move m1, Move m2, Move 
     }
 }
 
-Pokemon:take(Pokemon pokemon, Move move) {
+Pokemon:take(Pokemon pokemon, Pokemon opp, Move move) {
   int dmg = move.damage
   //MODIFY DAMAGE BASED ON TYPING
+  if (opp.ko) {
+    dmg = 0;
+  }
   this.currentHP = this.currentHP - dmg;
   if (this.currentHP <= 0) {
     currentHP = 0;
