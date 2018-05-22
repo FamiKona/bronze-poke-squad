@@ -184,7 +184,7 @@ Move:Move(String namep, String typep, int damagep){
 }
 */
 
-/*
+
 class Pokemon
 {
     public:
@@ -201,11 +201,22 @@ class Pokemon
         take();
 };
 
-Pokemon::Pokemon(String typep, String namep, int maxHPp) {
+Pokemon::Pokemon(String typep, String namep, int maxHPp, Move m1, Move m2, Move m3, Move m4) {
     type = typep;
     name = namep;
     maxHP = maxHPp;
-    move1 = Move("Tackle", "Normal", 40);
+    if (m1 == null) {
+      move1 = Move("Tackle", "Normal", 40);
+    }
+    if (m2 != null) {
+      move2 = m2;
+    }
+    if (m3 != null) {
+      move3 = m3;
+    }
+    if (m4 != null) {
+      move4 = m4;
+    }
 }
 
 Pokemon:take(Pokemon pokemon, Move move) {
@@ -213,4 +224,3 @@ Pokemon:take(Pokemon pokemon, Move move) {
   //MODIFY DAMAGE BASED ON TYPING
   this.currentHP = this.currentHP - dmg; 
 }
-*/
