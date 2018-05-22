@@ -184,7 +184,7 @@ Move:Move(String namep, String typep, int damagep){
 }
 */
 
-
+/*
 class Pokemon
 {
     public:
@@ -224,3 +224,4 @@ Pokemon:take(Pokemon pokemon, Move move) {
   //MODIFY DAMAGE BASED ON TYPING
   this.currentHP = this.currentHP - dmg; 
 }
+*/
