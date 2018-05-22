@@ -162,8 +162,16 @@ int sendMove(int move) {
   //0 INVALID 1 VALID 2 VALID+EFFECT
 }
 
-bool battle(Pokemon alpha, Pokemon beta) {
+bool battle(Pokemon hmn, Pokemon cpu) {
+  if (cpu.ko) {
+    return true;
+  }
+  else if (hmn.ko) {
+    return false;
+  }
+  else {
   return true;
+  }
   //true is victory, false is loss
 }
 
