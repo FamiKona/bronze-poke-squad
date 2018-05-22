@@ -1,9 +1,12 @@
 #include <SoftwareSerial.h>
-#include <Button.h>
 
 SoftwareSerial xBee(2, 3);
 
-String buff;
+String msg;
+bool msgComplete;
+const byte newLineChar = 0x0A;
+
+
 
 //SETUP
 void setup() {
@@ -12,10 +15,11 @@ void setup() {
   xBee.begin(9600);
 
   //check that the two subunits are running
-  bool allActive = allActive();
+  allActive();
+  msgComplete = false;
 
   //buffer for the String
-  buff = "";
+  msg = "";
 }
 
 //MAIN LOOP
@@ -27,11 +31,11 @@ void loop() {
 
 //check if all the units are nearby
 void allActive() {
-  Serial.println("Looking for units...")
+  Serial.println("Looking for units...");
   bool dm_unit_exists = false;
   bool player_unit_exists = false;
 
-  while (!dm_unit_exists && !player_unit_exists) {
+  while (!dm_unit_exists || !player_unit_exists) {
     checkMessageReceived();
     if (msgComplete) {
       if (msg.equals("dm_unit_ready")) {
@@ -61,7 +65,7 @@ void checkMessageReceived() {
 }
 
 int waitForMove() {
-  Serial.print("Waiting for move...")
+  Serial.print("Waiting for move...");
 
 
   msg = "";
@@ -132,11 +136,12 @@ int sendMove(int move) {
       checkMessageReceived();
       if (msgComplete) {
         if (msg.equals("move_received")) {
-          Serial.println("Move Received by Player Unit...")
+          Serial.println("Move Received by Player Unit...");
           msgComplete = false;
           msg = "";
           confirmSend = true;
         } else {
+          // message is complete but it's not correct. retry.
           msg = "";
         }
       } else {
@@ -153,34 +158,33 @@ int sendMove(int move) {
   //at this point it has been confirmed that the move has been received by the player unit
 
 
-
   //RETURN POSITION
   //0 INVALID 1 VALID 2 VALID+EFFECT
 }
 
-bool battle(Pokemon alpha, Pokemon beta) {
-  return true;
-  //true is victory, false is loss
-}
+//bool battle(Pokemon alpha, Pokemon beta) {
+//  return true;
+//  //true is victory, false is loss
+//}
 
-class Pokemon
-{
-    public:
-        string type;
-        string type2;
-        string name;
-        int maxHP;
-        int currentHP;
-        string move1;
-        string move2;
-        string move3;
-        string move4;
-        Pokemon();
-};
-
-Pokemon::Pokemon(string typep, string namep, int maxHPp) {
-    type = typep;
-    name = namep;
-    maxHP = maxHPp;
-    move1 = "tackle";
-}
+//class Pokemon
+//{
+//    public:
+//        String type;
+//        String type2;
+//        String name;
+//        int maxHP;
+//        int currentHP;
+//        String move1;
+//        String move2;
+//        String move3;
+//        String move4;
+//        Pokemon();
+//};
+//
+//Pokemon::Pokemon(String typep, String namep, int maxHPp) {
+//    type = typep;
+//    name = namep;
+//    maxHP = maxHPp;
+//    move1 = "tackle";
+//}
