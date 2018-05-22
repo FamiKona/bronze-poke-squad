@@ -197,6 +197,7 @@ class Pokemon
         String move2;
         String move3;
         String move4;
+        bool ko;
         Pokemon();
         take();
 };
@@ -204,6 +205,7 @@ class Pokemon
 Pokemon::Pokemon(String typep, String namep, int maxHPp, Move m1, Move m2, Move m3, Move m4) {
     type = typep;
     name = namep;
+    ko = false;
     maxHP = maxHPp;
     currentHP = maxHP;
     if (m1 == null) {
@@ -223,6 +225,10 @@ Pokemon::Pokemon(String typep, String namep, int maxHPp, Move m1, Move m2, Move 
 Pokemon:take(Pokemon pokemon, Move move) {
   int dmg = move.damage
   //MODIFY DAMAGE BASED ON TYPING
-  this.currentHP = this.currentHP - dmg; 
+  this.currentHP = this.currentHP - dmg;
+  if (this.currentHP <= 0) {
+    currentHP = 0;
+    ko = true;
+  }
 }
 */
