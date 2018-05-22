@@ -162,6 +162,11 @@ int sendMove(int move) {
   //0 INVALID 1 VALID 2 VALID+EFFECT
 }
 
+bool battle(Pokemon alpha, Pokemon beta) {
+  return true;
+  //true is victory, false is loss
+}
+
 /*
 class Move
 {
@@ -180,11 +185,6 @@ Move:Move(String namep, String typep, int damagep){
 */
 
 /*
-bool battle(Pokemon alpha, Pokemon beta) {
-  return true;
-  //true is victory, false is loss
-}
-
 class Pokemon
 {
     public:
