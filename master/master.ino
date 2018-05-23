@@ -220,6 +220,9 @@ Pokemon::Pokemon(String typep, String namep, int maxHPp, Move m1, Move m2, Move 
     if (m1 == null) {
       move1 = Move("Tackle", "Normal", 40);
     }
+    else {
+      move1 = m1;
+    }
     if (m2 != null) {
       move2 = m2;
     }
