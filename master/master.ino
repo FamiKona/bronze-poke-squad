@@ -1,9 +1,6 @@
 #include <SoftwareSerial.h>
-<<<<<<< HEAD
 #include <stdlib.h>
-=======
 #include "Pokemon.h"
->>>>>>> c72ca358442fb9879efe1aedebff1a0a8fc53e2c
 
 SoftwareSerial xBee(2, 3);
 
