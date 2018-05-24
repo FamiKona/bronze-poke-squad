@@ -11,13 +11,20 @@ Adafruit_LiquidCrystal lcd(0);
 SoftwareSerial xbee(2, 3); // RX, TX
 
 // Joystick Setup
-int joyPin1 = 0;                 // slider variable connecetd to analog pin 0
-int joyPin2 = 1;                 // slider variable connecetd to analog pin 1
+int joyPin1 = 0;                 // slider variable connected to analog pin 0
+int joyPin2 = 1;                 // slider variable connected to analog pin 1
 int value1 = 0;                  // variable to read the value from the analog pin 0
 int value2 = 0;                  // variable to read the value from the analog pin 1
 
-// pull in the move set 
-String moveSet[4]={"wind", "fire", "water", "ground"};
+String msg;
+bool msgComplete;
+const byte newLineChar = 0x0A;
+int start = 0;
+int x = 0;
+int y = 0;
+
+// pull in the move set TEMPORARY
+String moveSet[4] = {"wind", "fire", "water", "ground"};
 //int moveCurr = 0;
 
 // location data
@@ -39,7 +46,7 @@ void setup() {
   lcd.begin(16, 2);
   // Print a message to the LCD.
   lcd.print("Pokemon Dungeon");
-  lcd.setCursor(0,1);
+  lcd.setCursor(0, 1);
 }
 
 // Function that calculates the joystick position values
@@ -48,9 +55,40 @@ int treatValue(int data) {
 }
 
 // Function that reads in location
+// here
+
+
+
+
+void checkMessageReceived() {
+  if (xbee.available()) {
+    byte ch = xbee.read();
+    if (ch == newLineChar) {
+      msgComplete = true;
+      msg.trim();
+    } else {
+      msg += char(ch);
+    }
+  }
+}
 
 void loop() {
-  
+
+  // CHECKING XBEE CONNECTIVITY //
+  if (start == 0) {
+    xbee.println("player_unit_ready");
+    delay(1000);
+    checkMessageReceived();
+    if (msgComplete) {
+      if (msg.equals("master_unit_ready")) {
+        start = 1;
+      }
+      msgComplete = false;
+      msg = "";
+    }
+  }
+
+
   // BUTTON //
   //read the pushbutton value into a variable
   int buttonA = digitalRead(7);
@@ -66,78 +104,99 @@ void loop() {
     digitalWrite(13, LOW);
   } else {
     digitalWrite(13, HIGH);
-    lcd.setCursor(0,1);
+    lcd.setCursor(0, 1);
     lcd.print("Select");
-//    Serial.println("Button A/Select");
+    //    Serial.println("Button A/Select");
   }
 
   if (buttonB == HIGH) {
     digitalWrite(12, LOW);
   } else {
     digitalWrite(12, HIGH);
-    lcd.setCursor(0,1);
+    lcd.setCursor(0, 1);
     lcd.print("Cancel");
-//    Serial.println("Button B/Cancel");
+    //    Serial.println("Button B/Cancel");
   }
   // END OF BUTTON //
-  
+
   // x BEE //
   // send character via XBee to other XBee connected to Mac
   // via USB cable
-//  xbee.print("lol");
-//  // END OF X BEE //
+  xbee.print("gina");
+  //  // END OF X BEE //
 
   // JOYSTICK //
 
   // UP/DOWN // value1: 48 down, 52 neutral, 56 up
   // LEFT/RIGHT // value2: 48 left, 52 neutral, 56 right
-  
-  // reads the value of the variable resistor 
-  value1 = analogRead(joyPin1);   
+
+  // reads the value of the variable resistor
+  value1 = analogRead(joyPin1);
   // this small pause is needed between reading
   // analog pins, otherwise we get the same value twice
-//  delay(100);             
-  // reads the value of the variable resistor 
-  value2 = analogRead(joyPin2);   
+  //  delay(100);
+  // reads the value of the variable resistor
+  value2 = analogRead(joyPin2);
 
   int vertiMove = treatValue(value1);
   int horiMove = treatValue(value2);
-  
+
   Serial.print("UP/DOWN 1: ");
   Serial.print(horiMove);
   Serial.print("    L/R 2: ");
   Serial.println(vertiMove);
 
+  xbee.println("player_unit_ready");
+  delay(1000);
+
+  /************* LOCATION COMMANDS *************/
+  // send location to ____ using xbee commands
+
+  /*********************************************/
+
+
   /************* BATTLE *************/
   // this should activate the battle loop. to be replaced w/ an activation from
-  // the dungeon master
+  // the other remote team
   if (buttonB == LOW) {
     inBattle = true;
   }
   while (inBattle == true) {
-//    bool state;   
+    //    bool state;
     inBattle = battle(inBattle, joyPin1, joyPin2);
   }
-  delay(500);
+  //  delay(500);
   /************* OUT OF BATTLE *************/
-  
+
   // MOVING AROUND -- exiting prescribed "battle" state
   if (horiMove == 48) {
-    lcd.print("left");
-    lcd.setCursor(0,1);
-    
+    //    lcd.print("left");
+    //    lcd.setCursor(0,1);
+    Serial.println("lf");
+    xbee.println("lf");
+    delay(100);
+
   } else if (horiMove == 56) {
-    lcd.print("right");
-    lcd.setCursor(0,1);
+    //    lcd.print("right");
+    //    lcd.setCursor(0,1);
+    Serial.println("rt");
+    xbee.println("rt");
+    delay(100);
   }
 
   // tracking vertical movement
   if (vertiMove == 48) {
-    lcd.print("down");
-    lcd.setCursor(0,1);
+    //    lcd.print("down");
+    //    lcd.setCursor(0,1);
+    Serial.println("dn");
+    xbee.println("dn");
+    delay(100);
   } else if (vertiMove == 56) {
-    lcd.print("up");
-    lcd.setCursor(0,1);
+    //    lcd.print("up");
+    //    lcd.setCursor(0,1);
+    Serial.println("up");
+    xbee.println("up");
+    delay(100);
   }
   //END OF JOYSTICK //
 
@@ -146,11 +205,11 @@ void loop() {
 }
 
 /* BATTLE FUNCTION
- * Enters a loop in which a player can choose moves against their opponent.
- * Variables: bool inBattle imports the state of battle
- *            int joyPin1 & 2: reads in state of joystick from analog pin
- * Returns: boolean true/false to stay in or leave battle state
- */
+   Enters a loop in which a player can choose moves against their opponent.
+   Variables: bool inBattle imports the state of battle
+              int joyPin1 & 2: reads in state of joystick from analog pin
+   Returns: boolean true/false to stay in or leave battle state
+*/
 bool battle(bool inBattle, int joyPin1, int joyPin2) {
   Serial.println("<<<<<<<<<<<<<<IN BATTLE>>>>>>>>>>>>>>>");
   int moveCurr = 0;
@@ -159,29 +218,28 @@ bool battle(bool inBattle, int joyPin1, int joyPin2) {
   int vertiMove;
   int horiMove;
 
-  while(inBattle = true) {
-    // reads the up/down value of the variable resistor 
+  while (inBattle = true) {
+    // reads the up/down value of the variable resistor
     vertiRead = analogRead(joyPin1);
-    // reads the L/R value of the variable resistor 
+    // reads the L/R value of the variable resistor
     horiRead = analogRead(joyPin2);
-    
+
     vertiMove = treatValue(vertiRead);
     horiMove = treatValue(horiRead);
-//delete: debugging purposes.
+    //delete: debugging purposes.
     Serial.print(horiMove);
     Serial.print("       v: ");
     Serial.println(vertiMove);
-  
-    lcd.setCursor(0,0);
+
+    lcd.setCursor(0, 0);
     lcd.print("Move Name");
-    
     if (horiMove == 48) {
-      lcd.setCursor(0,1);
+      lcd.setCursor(0, 1);
       moveCurr -= 1;
-//delete: debugging purposes.
-//      Serial.print("moveCurr = ");
-//      Serial.print(moveCurr);
-      
+      //delete: debugging purposes.
+      //      Serial.print("moveCurr = ");
+      //      Serial.print(moveCurr);
+
       // delay to allow for easy array traversing
       delay(300);
       if (moveCurr == -1) {
@@ -189,22 +247,22 @@ bool battle(bool inBattle, int joyPin1, int joyPin2) {
       }
       lcd.print(moveSet[moveCurr]);
 
-      lcd.setCursor(0,1);
-//delete: debugging purposes.
-//      Serial.println("LEFT");
+      lcd.setCursor(0, 1);
+      //delete: debugging purposes.
+      //      Serial.println("LEFT");
     } else if (horiMove == 56) {
-      lcd.setCursor(0,1);
+      lcd.setCursor(0, 1);
       moveCurr += 1;
       delay(300);
       if (moveCurr == 4) {
         moveCurr = 3;
       }
       lcd.print(moveSet[moveCurr]);
-      lcd.setCursor(0,1);
-//delete: debugging purposes.
-//      Serial.println("RIGHT");
+      lcd.setCursor(0, 1);
+      //delete: debugging purposes.
+      //      Serial.println("RIGHT");
     }
-    
+
     // battle exiting conditional
     if (vertiMove == 56) {
       inBattle = false;
