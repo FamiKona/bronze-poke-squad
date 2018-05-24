@@ -1,4 +1,5 @@
 #include <SoftwareSerial.h>
+#include <stdlib.h>
 
 SoftwareSerial xBee(2, 3);
 
@@ -6,17 +7,18 @@ String msg;
 bool msgComplete;
 const byte newLineChar = 0x0A;
 
-
+int humidity;
+int temperature;
 
 //SETUP
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
   xBee.begin(9600);
+  msgComplete = false;
 
   //check that the two subunits are running
   allActive();
-  msgComplete = false;
 
   //buffer for the String
   msg = "";
@@ -24,9 +26,52 @@ void setup() {
 
 //MAIN LOOP
 void loop() {
+  // get initial data from dm unit
+  getInitialConditions();
+
   // put your main code here, to run repeatedly:
-  int move = waitForMove();
-  sendMove(move);
+
+  bool battleActive = true;
+  battleActive = battle();
+
+
+}
+
+void getInitialConditions() {
+  bool receivedHumidity = false;
+  bool receivedTemperature = false;
+  bool readyToStart = false;
+
+  while (!receivedHumidity || receivedTemperature) {
+    checkMessageReceived();
+    if (msgComplete) {
+      // t e m p :   n n
+      // 0 1 2 3 4 5 6 7
+      String msgType = msg.substr(0,4);
+      int num = int(msg.substr(6));
+
+      if (msgType.equals("temp") {
+        receivedTemperature = true;
+        humidity = num;
+      } else if (msgType.equals("humi")) {
+        receivedHumidity = true;
+        temperature = num;
+      }
+      msgComplete = false;
+      msg = "";
+    }
+  }
+
+  while (!readyToStart) {
+    checkMessageReceived();
+    if (msgComplete) {
+      if (msg.equals("start")) {
+        readyToStart = true;
+      }
+    }
+    msgComplete = false;
+    msg = "";
+  }
 }
 
 //check if all the units are nearby
@@ -68,7 +113,6 @@ void checkMessageReceived() {
 int waitForMove() {
   Serial.print("Waiting for move...");
 
-
   msg = "";
   int currMove = getMove();
 
@@ -98,18 +142,12 @@ int getMove(){
       } else if (msg.equals("rt")) {
         move = 4;
         Serial.println("Received move: RIGHT");
-      } else if (msg.equals("m1")) {
+      } else if (msg.equals("sel")) {
         move = 5;
-        Serial.println("Received move: MOVE 1");
-      } else if (msg.equals("m2")) {
+        Serial.println("Received move: SELECT");
+      } else if (msg.equals("cancel")) {
         move = 6;
-        Serial.println("Received move: MOVE 2");
-      } else if (msg.equals("m3")) {
-        move = 7;
-        Serial.println("Received move: MOVE 3");
-      } else if (msg.equals("m4")) {
-        move = 8;
-        Serial.println("Received move: MOVE 4");
+        Serial.println("Received move: CANCEL");
       }
       msgComplete = false; //end of the msg
       msg = ""; //reset the global msg
@@ -121,7 +159,6 @@ int getMove(){
 }
 
 int sendMove(int move) {
-
 
   bool confirmSend = false;
   msg = ""; //make sure the buffer is empty first
@@ -163,7 +200,37 @@ int sendMove(int move) {
   //0 INVALID 1 VALID 2 VALID+EFFECT
 }
 
-bool battle(Pokemon hmn, Pokemon cpu) {
+// battle logic
+// returns true if still the player wins
+// returns false if the cpu has won
+bool battle(Pokemon human, Pokemon cpu) {
+  int getRandomTurn = rand() % 2;
+  bool turn;
+  if (getRandomTurn == 0) {
+    turn = true;
+  } else {
+    turn == false;
+  }
+  
+
+
+  while (!cpu.ko || !human.ko) {
+    // check whether either is dead
+
+    if (cpu.ko) {
+      return true; // player has won
+    } else if (human.ko) {
+      return false; // player has lost
+    }
+
+
+
+
+  }
+
+
+
+
   //MOVE CYCLE
   if (cpu.ko) {
     return true;
