@@ -1,9 +1,6 @@
 #include <SoftwareSerial.h>
-<<<<<<< HEAD
-#include <stdlib.h>
-=======
 #include "Pokemon.h"
->>>>>>> c72ca358442fb9879efe1aedebff1a0a8fc53e2c
+#include <stdlib.h>
 
 SoftwareSerial xBee(2, 3);
 
@@ -13,6 +10,7 @@ const byte newLineChar = 0x0A;
 
 int humidity;
 int temperature;
+bool inBattle;
 
 //SETUP
 void setup() {
@@ -26,19 +24,27 @@ void setup() {
 
   //buffer for the String
   msg = "";
+  inBattle = false;
+
 }
 
 //MAIN LOOP
 void loop() {
-  // get initial data from dm unit
-  getInitialConditions();
-
-  // put your main code here, to run repeatedly:
-
-  bool battleActive = true;
-  battleActive = battle();
-
-
+  if (inBattle) {
+    // run the battle
+    getInitialConditions();
+    // start the battle!
+    bool results = battle();
+    // at this point the battle has ended
+    inBattle = false;
+  } else {
+    checkMessageReceived();
+    if (msgComplete) {
+      if (msg.equals("zubat")) {
+        inBattle = true;
+      }
+    }
+  }
 }
 
 void getInitialConditions() {
@@ -116,10 +122,8 @@ void checkMessageReceived() {
 
 int waitForMove() {
   Serial.print("Waiting for move...");
-
   msg = "";
   int currMove = getMove();
-
   return currMove;
 }
 
@@ -134,31 +138,24 @@ int getMove(){
   while (!isValidMove){
     checkMessageReceived(); //get the new message as it comes
     if (msgComplete) {
-      if (msg.equals("up")) {
+      if (msg.equals("move:1")) {
         move = 1;
-        Serial.println("Received move: UP");
-      } else if (msg.equals("dn")) {
+        Serial.println("Received move: move 1");
+      } else if (msg.equals("move:2")) {
         move = 2;
-        Serial.println("Received move: DOWN");
-      } else if (msg.equals("lf")) {
+        Serial.println("Received move: move 2");
+      } else if (msg.equals("move:3")) {
         move = 3;
-        Serial.println("Received move: LEFT");
-      } else if (msg.equals("rt")) {
+        Serial.println("Received move: move 3");
+      } else if (msg.equals("move:4")) {
         move = 4;
-        Serial.println("Received move: RIGHT");
-      } else if (msg.equals("sel")) {
-        move = 5;
-        Serial.println("Received move: SELECT");
-      } else if (msg.equals("cancel")) {
-        move = 6;
-        Serial.println("Received move: CANCEL");
+        Serial.println("Received move: move 4");
       }
       msgComplete = false; //end of the msg
       msg = ""; //reset the global msg
       isValidMove = true; //exit while
     }
   }
-
   return move;
 }
 
@@ -208,45 +205,64 @@ int sendMove(int move) {
 // returns true if still the player wins
 // returns false if the cpu has won
 bool battle(Pokemon human, Pokemon cpu) {
-  int getRandomTurn = rand() % 2;
-  bool turn;
+  int getRandomTurn = rand() % 2;  // roll a die!
+  bool humanGoesFirst;
   if (getRandomTurn == 0) {
-    turn = true;
+    humanGoesFirst = true; // human goes first
   } else {
-    turn == false;
-  }
-  
-
-
-  while (!cpu.ko || !human.ko) {
-    // check whether either is dead
-
-    if (cpu.ko) {
-      return true; // player has won
-    } else if (human.ko) {
-      return false; // player has lost
-    }
-
-
-
-
+    humanGoesFirst == false; // computer goes first
   }
 
-
-
-
-  //MOVE CYCLE
+  //check whether either one is dead first, just to make sure
   if (cpu.ko) {
-    return true;
+    return true; // player has won
+  } else if (human.ko) {
+    return false; // player has lost
   }
-  else if (hmn.ko) {
-    return false;
+
+  // organise players by humanGoesFirst
+  Pokemon p1;
+  Pokemon p2;
+  if (humanGoesFirst == true) {
+    p1 = human;
+    p2 = cpu;
+  } else {
+    p1 = cpu;
+    p2 = human;
   }
-  else {
-  return true; //recursive here? battle(hmn, cpu)
+
+  int currTurn = 0; // turn counter
+
+  // while the cpu is not dead AND the human is not dead
+  while (!p1.ko && !p2.ko) {
+    if (currTurn % 2 == 0) { //p1's turn
+      int currentMove = waitForMove();
+      attack(p1, p2, currentMove);
+    } else {
+      int currentMove = waitForMove();
+      attack(p2, p1, currentMove);
+    }
+    currTurn++;
   }
-  //true is victory, false is loss
+
+  //at this point, one of them is dead
+
+  //return who won
+  if (cpu.ko) {
+    return true; //player has won
+  } else {
+    return false; // player has lost
+  }
 }
 
-
-
+void attack(Pokemon attacker, Pokemon target, int move) {
+  if (move == 1) {
+    target.take(attacker, attacker.move1);
+  } else if (move == 2) {
+    target.take(attacker, attacker.move2);
+  } else if (move == 3) {
+    target.take(attacker, attacker.move2);
+  } else if (move == 4) {
+    target.take(attacker, attacker.move2);
+  }
+}
