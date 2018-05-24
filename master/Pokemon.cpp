@@ -26,7 +26,7 @@ Pokemon::Pokemon(String typep, String namep, int maxHPp) {
     this->move4 = new Move();
 }
 
-Pokemon::take(Pokemon pokemon, Pokemon opp, Move move) {
+Pokemon::take(Pokemon opp, Move move) {
   int dmg = move.damage;
   //MODIFY DAMAGE BASED ON TYPING
   if (opp.ko) {
