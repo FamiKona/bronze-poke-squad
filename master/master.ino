@@ -59,6 +59,7 @@ void checkMessageReceived() {
     byte ch = xBee.read();
     if (ch == newLineChar) {
       msgComplete = true;
+      msg.trim(); // KMS THIS ONE FUCKING LINE OF CODE
     } else {
       msg += char(ch);
     }
