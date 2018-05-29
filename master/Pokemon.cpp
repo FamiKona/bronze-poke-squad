@@ -20,8 +20,7 @@ Pokemon::Pokemon(String typep, String namep, int maxHPp) {
 
 void Pokemon::take(String oppName, Move m, int t) {
   int dmg = m.damage;
-  Serial.print("OPP MOVE TYPE:     ");
-  Serial.println(t);
+  String oppMoveType = "HELLO";
   
   if (t == 1) { //attacked pokemon is normal type
     double tempdmg = 1.0 * dmg;
