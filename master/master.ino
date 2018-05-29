@@ -8,6 +8,8 @@ SoftwareSerial xBee(2, 3);
 String msg;
 bool msgComplete;
 const byte newLineChar = 0x0A;
+bool sunny = false;
+bool rainy = false;
 
 int humidity;
 int temperature;
@@ -89,11 +91,17 @@ void getInitialConditions() {
         temperature = int(num);
         Serial.print("TEMP ");
         Serial.println(num);
+        if (num > 30) {
+          rainy = true;
+        }
       } else if (msgType.equals("humi")) {
         receivedHumidity = true;
         temperature = int(num);
         Serial.print("HUMI ");
         Serial.println(num);
+        if (num > 45) {
+          rainy = true;
+        }
       }
       msgComplete = false;
       msg = "";
