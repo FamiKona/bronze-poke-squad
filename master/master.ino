@@ -214,14 +214,6 @@ bool battle(Pokemon human, Pokemon computer) {
     humanGoesFirst = false; // computer goes first
     Serial.println("OPPONENT GOES FIRST!");
   }
-
-  //check whether either one is dead first, just to make sure
-  if (computer.ko) {
-    return true; // player has won
-  } else if (human.ko) {
-    return false; // player has lost
-  }
-
   int currTurn = 0; // turn counter
 
   Serial.println();
@@ -249,26 +241,44 @@ bool battle(Pokemon human, Pokemon computer) {
       Serial.println("IT IS THE OPPONENTS'S TURN");
       Serial.println("OPPONENT IS CHOOSING A MOVE...");
       int currentMove = (rand() % 4) + 1;
+      delay(1000);
       if (currentMove == 1) {
-        human.take(computer, computer.move1);
+        Serial.print(computer.name);
+        Serial.print(" used ");
+        Serial.println(computer.move1.name);
+        human.take(computer.name, computer.move1);
       } else if (currentMove == 2) {
-        human.take(computer, computer.move2);
+        Serial.print(computer.name);
+        Serial.print(" used ");
+        Serial.println(computer.move2.name);
+        human.take(computer.name, computer.move2);
       } else if (currentMove == 3) {
-        human.take(computer, computer.move3);
+        Serial.print(computer.name);
+        Serial.print(" used ");
+        Serial.println(computer.move3.name);
+        human.take(computer.name, computer.move3);
       } else if (currentMove == 4) {
-        human.take(computer, computer.move4);
+        Serial.print(computer.name);
+        Serial.print(" used ");
+        Serial.println(computer.move4.name);
+        human.take(computer.name, computer.move4);
       }
+      Serial.println();
     } else {
-      Serial.println("IT IS THE OPPONENTS'S TURN");
+      Serial.println("IT IS THE PLAYER'S TURN");
       int currentMove = waitForMove();
       if (currentMove == 1) {
-        cpu.take(human, human.move1);
+        computer.take(human.name, human.move1);
       } else if (currentMove == 2) {
-        cpu.take(human, human.move2);
+        computer.take(human.name, human.move2);
       } else if (currentMove == 3) {
-        cpu.take(human, human.move3);
+        computer.take(human.name, human.move3);
       } else if (currentMove == 4) {
-        cpu.take(human, human.move4);
+        computer.take(human.name, human.move4);
+      } else {
+        Serial.print(player.name);
+        Serial.println(" missed! (improper move name)");
+        Serial.println();
       }
     }
     currTurn++;
@@ -277,10 +287,10 @@ bool battle(Pokemon human, Pokemon computer) {
   //at this point, one of them is dead
 
   //return who won
-  if (cpu.ko) {
+  if (computer.ko) {
     return true; //player has won
     Serial.println("PLAYER HAS WON!!");
-  } else {
+  } else if (human.ko) {
     return false; // player has lost
     Serial.println("PLAYER HAS LOST!!");
   }

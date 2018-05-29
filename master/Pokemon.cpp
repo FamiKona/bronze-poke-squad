@@ -16,25 +16,22 @@ Pokemon::Pokemon(String typep, String namep, int maxHPp) {
     move4 = Move("Tackle", "Normal", 40);
 }
 
-void Pokemon::take(Pokemon opp, Move move) {
+void Pokemon::take(String oppName, Move move) {
   int dmg = move.damage;
   //MODIFY DAMAGE BASED ON TYPING
-  if (opp.ko) {
-    dmg = 0;
-    Serial.print("OPPONENT KO'D");
-  }
   this->currentHP = this->currentHP - dmg;
   Serial.println();
-  Serial.print(opp.name);
+  Serial.print(oppName);
   Serial.print(" dealt ");
   Serial.print(dmg);
-  Serial.println("damage!");
+  Serial.println(" damage!");
+  Serial.println();
   
   if (this->currentHP <= 0) {
     Serial.print(this->name);
     Serial.println(" perished!");
-    currentHP = 0;
-    ko = true;
+    this->currentHP = 0;
+    this->ko = true;
   }
 }
 
