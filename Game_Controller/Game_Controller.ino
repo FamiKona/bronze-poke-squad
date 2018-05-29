@@ -10,6 +10,7 @@ Adafruit_LiquidCrystal lcd(0);
 // XBee's DIN (RX) is connected to pin 3 (Arduino's Software TX)
 SoftwareSerial xbee(2, 3); // RX, TX
 
+
 // Joystick Setup
 int joyPin1 = 0;                 // slider variable connected to analog pin 0
 int joyPin2 = 1;                 // slider variable connected to analog pin 1
@@ -25,9 +26,22 @@ int y = 0;
 
 // pull in the move set TEMPORARY
 String moveSet[4] = {"wind", "fire", "water", "ground"};
-//int moveCurr = 0;
+//int move]Curr = 0;
 
-// location data
+// RFID setup
+// RFID Libraries
+#include <MFRC522.h> // Include of the RC522 Library
+#include <SPI.h> // Used for communication via SPI with the Module
+#define SDAPIN 10 // RFID Module SDA Pin is connected to the UNO 10 Pin
+#define RESETPIN 9 // RFID Module RST Pin is connected to the UNO 8 Pin
+
+byte FoundTag; // Variable used to check if Tag was found
+byte ReadTag; // Variable used to store anti-collision value to read Tag information
+byte TagData[MAX_LEN]; // Variable used to store Full Tag Data
+byte TagSerialNumber[5]; // Variable used to store only Tag Serial Number
+byte GoodTagSerialNumber[5] = {0x95, 0xEB, 0x17, 0x53}; // The Tag Serial number we are looking for
+
+MFRC522 nfc(SDAPIN, RESETPIN); // Init of the library using the UNO pins declared above
 
 bool inBattle = false;
 
@@ -47,18 +61,16 @@ void setup() {
   // Print a message to the LCD.
   lcd.print("Pokemon Dungeon");
   lcd.setCursor(0, 1);
+
+  //RFID setup//
+  SPI.begin();
+  rfidCheck();
 }
 
 // Function that calculates the joystick position values
 int treatValue(int data) {
   return (data * 9 / 1024) + 48;
 }
-
-// Function that reads in location
-// here
-
-
-
 
 void checkMessageReceived() {
   if (xbee.available()) {
@@ -72,7 +84,29 @@ void checkMessageReceived() {
   }
 }
 
+void rfidCheck() {
+  // Start to find an RFID Module
+  Serial.println("Looking for RFID Reader");
+  nfc.begin(); // Init MFRC522 
+  byte version = nfc.getFirmwareVersion(); // Variable to store Firmware version of the Module
+  
+  // If can't find an RFID Module 
+  if (! version) { 
+    Serial.print("Didn't find RC522 board.");
+    while(1); //Wait until a RFID Module is found
+  }
+  
+  // If found, print the information about the RFID Module
+  Serial.print("Found chip RC522 ");
+  Serial.print("Firmware version: 0x");
+  Serial.println(version, HEX);
+  Serial.println();
+}
+
 void loop() {
+
+  // RFID READ IN //
+  rfidRead();
 
   // CHECKING XBEE CONNECTIVITY //
   if (start == 0) {
@@ -88,11 +122,13 @@ void loop() {
     }
   }
 
+  
 
   // BUTTON //
   //read the pushbutton value into a variable
   int buttonA = digitalRead(7);
   int buttonB = digitalRead(8);
+  
   //print out the value of the pushbutton
   Serial.println(buttonA);
   Serial.println(buttonB);
@@ -149,10 +185,6 @@ void loop() {
   xbee.println("player_unit_ready");
   delay(1000);
 
-  /************* LOCATION COMMANDS *************/
-  // send location to ____ using xbee commands
-
-  /*********************************************/
 
 
   /************* BATTLE *************/
@@ -199,9 +231,6 @@ void loop() {
     delay(100);
   }
   //END OF JOYSTICK //
-
-
-  // RFID //
 }
 
 /* BATTLE FUNCTION
@@ -226,12 +255,13 @@ bool battle(bool inBattle, int joyPin1, int joyPin2) {
 
     vertiMove = treatValue(vertiRead);
     horiMove = treatValue(horiRead);
-    //delete: debugging purposes.
-    Serial.print(horiMove);
-    Serial.print("       v: ");
-    Serial.println(vertiMove);
+//    //delete: debugging purposes.
+//    Serial.print(horiMove);
+//    Serial.print("       v: ");
+//    Serial.println(vertiMove);
 
     lcd.setCursor(0, 0);
+    
     lcd.print("Move Name");
     if (horiMove == 48) {
       lcd.setCursor(0, 1);
@@ -248,8 +278,6 @@ bool battle(bool inBattle, int joyPin1, int joyPin2) {
       lcd.print(moveSet[moveCurr]);
 
       lcd.setCursor(0, 1);
-      //delete: debugging purposes.
-      //      Serial.println("LEFT");
     } else if (horiMove == 56) {
       lcd.setCursor(0, 1);
       moveCurr += 1;
@@ -259,14 +287,66 @@ bool battle(bool inBattle, int joyPin1, int joyPin2) {
       }
       lcd.print(moveSet[moveCurr]);
       lcd.setCursor(0, 1);
-      //delete: debugging purposes.
-      //      Serial.println("RIGHT");
     }
 
-    // battle exiting conditional
+    int buttonA = digitalRead(7);
+    int buttonB = digitalRead(8);
+  
+    // selecting the move
+    if (buttonA == HIGH) {
+      digitalWrite(13, LOW);
+    } else {
+      digitalWrite(13, HIGH);
+      lcd.setCursor(0, 1);
+      xbee.print("move: ");
+      xbee.println(String(moveCurr));
+    }
+    // battle exiting conditional, this should happen 
+    // receive something from master
     if (vertiMove == 56) {
       inBattle = false;
       return false;
+    }
+  }
+}
+
+void rfidRead() {
+  String GoodTag="False"; // Variable used to confirm good Tag Detected
+
+  // Check to see if a Tag was detected
+  // If yes, then the variable FoundTag will contain "MI_OK"
+  FoundTag = nfc.requestTag(MF1_REQIDL, TagData);
+  
+  if (FoundTag == MI_OK) {
+    delay(200);
+    // Get anti-collision value to properly read information from the Tag
+    ReadTag = nfc.antiCollision(TagData);
+    memcpy(TagSerialNumber, TagData, 4); // Write the Tag information in the TagSerialNumber variable
+    
+    Serial.println("Tag detected.");
+    Serial.print("Serial Number: ");
+    for (int i = 0; i < 4; i++) { // Loop to print serial number to serial monitor
+      Serial.print(TagSerialNumber[i], HEX);
+      Serial.print(", ");
+    }
+    Serial.println("");
+    Serial.println();
+    
+    
+    // Check if detected Tag has the right Serial number we are looking for 
+    for(int i=0; i < 4; i++){
+      if (GoodTagSerialNumber[i] != TagSerialNumber[i]) {
+        break; // if not equal, then break out of the "for" loop
+      }
+      if (i == 3) { // if we made it to 4 loops then the Tag Serial numbers are matching
+        GoodTag="TRUE";
+      } 
+    }
+    if (GoodTag == "TRUE"){
+      Serial.println("Success!!!!!!!");
+    }
+    else {
+      Serial.println("TAG NOT ACCEPTED...... :(");
     }
   }
 }
