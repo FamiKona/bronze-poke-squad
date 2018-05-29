@@ -213,7 +213,7 @@ void loop() {
       y = beginningY;
       
       if (action6 == 0) {
-        xBee.println("zoobat");
+        xBee.println("zubat");
       }
 
       checkMessageReceived();
