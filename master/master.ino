@@ -13,8 +13,8 @@ int humidity;
 int temperature;
 bool inBattle;
 
-Pokemon cpu = Pokemon("water", "mudkip", 100);
-Pokemon player = Pokemon("water", "magikarp", 100);
+Pokemon cpu = Pokemon("Water", "mudkip", 100);
+Pokemon player = Pokemon("Water", "magikarp", 100);
 
 //SETUP
 void setup() {
@@ -23,8 +23,11 @@ void setup() {
   xBee.begin(9600);
   msgComplete = false;
 
+
   //check that the two subunits are running
   allActive();
+
+  player.setMove(1, "Flamethrower", "Fire", 30);
 
   //buffer for the String
   msg = "";
@@ -46,6 +49,7 @@ void loop() {
     Serial.println("BATTLE START");
     bool results = battle(player, cpu);
     // at this point the battle has ended
+    xBee.println("BATTLEEND");
     inBattle = false;
   } else {
     if (millis() % 5000 == 0) {
@@ -100,6 +104,7 @@ void getInitialConditions() {
     }
   }
 
+
   Serial.println("Waiting for battle to begin...");
   while (!readyToStart) {
     checkMessageReceived();
@@ -111,6 +116,8 @@ void getInitialConditions() {
     msgComplete = false;
     msg = "";
   }
+
+  xBee.println("READYTOSTART");
 }
 
 //check if all the units are nearby
@@ -160,13 +167,6 @@ void checkMessageReceived() {
     msgComplete = true;
     msg.trim();
   }
-}
-
-int waitForMove() {
-  Serial.print("Waiting for move...");
-  msg = "";
-  int currMove = getMove();
-  return currMove;
 }
 
 // INTERNAL METHOD //
@@ -246,35 +246,44 @@ bool battle(Pokemon human, Pokemon computer) {
         Serial.print(computer.name);
         Serial.print(" used ");
         Serial.println(computer.move1.name);
-        human.take(computer.name, computer.move1);
+        int moveType = getType(computer.move1.moveType);
+        human.take(computer.name, computer.move1, moveType);
       } else if (currentMove == 2) {
         Serial.print(computer.name);
         Serial.print(" used ");
         Serial.println(computer.move2.name);
-        human.take(computer.name, computer.move2);
+        int moveType = getType(computer.move2.moveType);
+        human.take(computer.name, computer.move2, moveType);
       } else if (currentMove == 3) {
         Serial.print(computer.name);
         Serial.print(" used ");
         Serial.println(computer.move3.name);
-        human.take(computer.name, computer.move3);
+        int moveType = getType(computer.move3.moveType);
+        human.take(computer.name, computer.move3, moveType);
       } else if (currentMove == 4) {
         Serial.print(computer.name);
         Serial.print(" used ");
         Serial.println(computer.move4.name);
-        human.take(computer.name, computer.move4);
+        int moveType = getType(computer.move4.moveType);
+        human.take(computer.name, computer.move4, moveType);
       }
       Serial.println();
     } else {
       Serial.println("IT IS THE PLAYER'S TURN");
-      int currentMove = waitForMove();
+      Serial.println("Waiting for move...");
+      int currentMove = getMove();
       if (currentMove == 1) {
-        computer.take(human.name, human.move1);
+        int moveType = getType(human.move1.moveType);
+        computer.take(human.name, human.move1, moveType);
       } else if (currentMove == 2) {
-        computer.take(human.name, human.move2);
+        int moveType = getType(human.move2.moveType);
+        computer.take(human.name, human.move2, moveType);
       } else if (currentMove == 3) {
-        computer.take(human.name, human.move3);
+        int moveType = getType(human.move3.moveType);
+        computer.take(human.name, human.move3, moveType);
       } else if (currentMove == 4) {
-        computer.take(human.name, human.move4);
+        int moveType = getType(human.move4.moveType);
+        computer.take(human.name, human.move4, moveType);
       } else {
         Serial.print(player.name);
         Serial.println(" missed! (improper move name)");
@@ -295,3 +304,18 @@ bool battle(Pokemon human, Pokemon computer) {
     Serial.println("PLAYER HAS LOST!!");
   }
 }
+
+int getType(String t) {
+  if (t == "Normal") {
+    return 1;
+  } else if (t == "Fire") {
+    return 2;
+  } else if (t == "Water") {
+    return 3;
+  } else if (t == "Grass") {
+    return 4;
+  } else {
+    return 0;
+  }
+}
+

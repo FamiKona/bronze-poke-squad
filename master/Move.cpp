@@ -5,13 +5,13 @@ using namespace std;
 
 Move::Move(String namep, String typep, int damagep){
   name = namep;
-  type = typep;
+  moveType = typep;
   damage = damagep;
 }
 
 Move::Move() {
   name = "Tackle";
-  type = "Normal";
+  moveType = "Normal";
   damage = 10;
 }
 

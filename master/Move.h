@@ -8,9 +8,9 @@ class Move
 {
   public:
     String name;
-    String type;
+    String moveType;
     int damage;
-    Move(String name, String type, int dmg);
+    Move(String name, String moveType, int dmg);
     Move();
 };
 
