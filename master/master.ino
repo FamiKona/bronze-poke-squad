@@ -1,11 +1,7 @@
 #include <SoftwareSerial.h>
-<<<<<<< HEAD
 #include "Pokemon.h"
+#include "Move.h"
 #include <stdlib.h>
-=======
-#include <stdlib.h>
-#include "Pokemon.h"
->>>>>>> b5f872be95645e607869066d859ac5652144de09
 
 SoftwareSerial xBee(2, 3);
 
@@ -16,6 +12,9 @@ const byte newLineChar = 0x0A;
 int humidity;
 int temperature;
 bool inBattle;
+
+Pokemon cpu = Pokemon("water", "mudkip", 100);
+Pokemon player = Pokemon("water", "magikarp", 100);
 
 //SETUP
 void setup() {
@@ -31,24 +30,36 @@ void setup() {
   msg = "";
   inBattle = false;
 
+  Serial.println("READY TO BEGIN ADVENTURE");
+
+
 }
 
 //MAIN LOOP
 void loop() {
+
   if (inBattle) {
     // run the battle
     getInitialConditions();
+    Serial.println("GETTING INITIAL CONDITIONS...");
     // start the battle!
-    bool results = battle();
+    Serial.println("BATTLE START");
+    bool results = battle(player, cpu);
     // at this point the battle has ended
     inBattle = false;
   } else {
+    if (millis() % 5000 == 0) {
+      Serial.println("You walk through the dungeon...");
+    }
     checkMessageReceived();
     if (msgComplete) {
       if (msg.equals("zubat")) {
+        Serial.println("A POKEMON WAS ENCOUNTERED!");
         inBattle = true;
+        msgComplete = false;
       }
     }
+    msg = "";
   }
 }
 
@@ -57,26 +68,39 @@ void getInitialConditions() {
   bool receivedTemperature = false;
   bool readyToStart = false;
 
-  while (!receivedHumidity || receivedTemperature) {
+  while (!receivedHumidity || !receivedTemperature) {
+    if (millis() % 2000 == 0) {
+      if (!receivedHumidity) {
+        Serial.println("Waiting for initial condition: humidity...");
+      }
+      if (!receivedTemperature) {
+        Serial.println("Waiting for initial condition: temperature...");
+      }
+    }
     checkMessageReceived();
     if (msgComplete) {
-      // t e m p :   n n
+      // t e m p :  n n
       // 0 1 2 3 4 5 6 7
-      String msgType = msg.substr(0,4);
-      int num = int(msg.substr(6));
-
-      if (msgType.equals("temp") {
+      String msgType = msg.substring(0,4);
+      String numStr = msg.substring(6);
+      int num = numStr.toInt();
+      if (msgType.equals("temp")) {
         receivedTemperature = true;
-        humidity = num;
+        temperature = int(num);
+        Serial.print("TEMP ");
+        Serial.println(num);
       } else if (msgType.equals("humi")) {
         receivedHumidity = true;
-        temperature = num;
+        temperature = int(num);
+        Serial.print("HUMI ");
+        Serial.println(num);
       }
       msgComplete = false;
       msg = "";
     }
   }
 
+  Serial.println("Waiting for battle to begin...");
   while (!readyToStart) {
     checkMessageReceived();
     if (msgComplete) {
@@ -100,8 +124,10 @@ void allActive() {
     if (msgComplete) {
       if (msg.equals("dm_unit_ready")) {
         dm_unit_exists = true;
+        Serial.println("DM UNIT READY");
       } else if (msg.equals("player_unit_ready")) {
         player_unit_exists = true;
+        Serial.println("PLAYER UNIT READY");
       }
       msgComplete = false;
       msg = "";
@@ -110,18 +136,29 @@ void allActive() {
   //at this point, both units are known to be working
   xBee.println("master_unit_ready");
   //PRINT READY TO DISPLAYS
-  Serial.println("READY!");
+  Serial.println("ALL UNITS READY!");
 }
 
+// void checkMessageReceived() {
+//   if (xBee.available()) {
+//     byte ch = xBee.read();
+//     if (ch == newLineChar) {
+//       msgComplete = true;
+//       msg.trim(); // KMS THIS ONE FUCKING LINE OF CODE
+//     } else {
+//       msg += char(ch);
+//     }
+//   }
+// }
+
+
+// TEMPORARY CHECKMESSAGERECEIVED TO EMULATE RECEIVING A MESSAGE FROM XBEE
 void checkMessageReceived() {
-  if (xBee.available()) {
-    byte ch = xBee.read();
-    if (ch == newLineChar) {
-      msgComplete = true;
-      msg.trim(); // KMS THIS ONE FUCKING LINE OF CODE
-    } else {
-      msg += char(ch);
-    }
+  while (Serial.available()) {
+    msg = Serial.readString();
+    Serial.println(msg);
+    msgComplete = true;
+    msg.trim();
   }
 }
 
@@ -164,88 +201,75 @@ int getMove(){
   return move;
 }
 
-int sendMove(int move) {
-
-  bool confirmSend = false;
-  msg = ""; //make sure the buffer is empty first
-
-  while (!confirmSend) { //not confirmed that the receiving unit has received it
-    xBee.println(move);
-    Serial.println("Sending move...");
-    Serial.println("Waiting for move to be received...");
-    unsigned long startTime = millis();
-    unsigned long timeOut = 5000; //5-second timeout
-
-    while (!msgComplete) {
-      checkMessageReceived();
-      if (msgComplete) {
-        if (msg.equals("move_received")) {
-          Serial.println("Move Received by Player Unit...");
-          msgComplete = false;
-          msg = "";
-          confirmSend = true;
-        } else {
-          // message is complete but it's not correct. retry.
-          msg = "";
-        }
-      } else {
-        if ((millis() - startTime) > timeOut) {
-          //if it has exceeded the timeout time, perhaps the player unit did not receive it.
-          //break the msgComplete while loop to restart the confirmSend while loop
-          //to re-send the move
-          msg = "";
-          break;
-        }
-      }
-    }
-  }
-  //at this point it has been confirmed that the move has been received by the player unit
-
-
-  //RETURN POSITION
-  //0 INVALID 1 VALID 2 VALID+EFFECT
-}
-
 // battle logic
 // returns true if still the player wins
 // returns false if the cpu has won
-bool battle(Pokemon human, Pokemon cpu) {
+bool battle(Pokemon human, Pokemon computer) {
   int getRandomTurn = rand() % 2;  // roll a die!
   bool humanGoesFirst;
   if (getRandomTurn == 0) {
     humanGoesFirst = true; // human goes first
+    Serial.println("PLAYER GOES FIRST!");
   } else {
-    humanGoesFirst == false; // computer goes first
+    humanGoesFirst = false; // computer goes first
+    Serial.println("OPPONENT GOES FIRST!");
   }
 
   //check whether either one is dead first, just to make sure
-  if (cpu.ko) {
+  if (computer.ko) {
     return true; // player has won
   } else if (human.ko) {
     return false; // player has lost
   }
 
-  // organise players by humanGoesFirst
-  Pokemon p1;
-  Pokemon p2;
-  if (humanGoesFirst == true) {
-    p1 = human;
-    p2 = cpu;
-  } else {
-    p1 = cpu;
-    p2 = human;
-  }
-
   int currTurn = 0; // turn counter
 
+  Serial.println();
+  
   // while the cpu is not dead AND the human is not dead
-  while (!p1.ko && !p2.ko) {
+  while (!human.ko && !computer.ko) {
+    Serial.print("CPU: ");
+    Serial.print(computer.name);
+    Serial.print(" HP: ");
+    Serial.print(computer.currentHP);
+    Serial.print("/");
+    Serial.println(computer.maxHP);
+
+    Serial.print("PLAYER: ");
+    Serial.print(human.name);
+    Serial.print(" HP: ");
+    Serial.print(human.currentHP);
+    Serial.print("/");
+    Serial.println(human.maxHP);
+
+    Serial.println();
+
+    
     if (currTurn % 2 == 0) { //p1's turn
-      int currentMove = waitForMove();
-      attack(p1, p2, currentMove);
+      Serial.println("IT IS THE OPPONENTS'S TURN");
+      Serial.println("OPPONENT IS CHOOSING A MOVE...");
+      int currentMove = (rand() % 4) + 1;
+      if (currentMove == 1) {
+        human.take(computer, computer.move1);
+      } else if (currentMove == 2) {
+        human.take(computer, computer.move2);
+      } else if (currentMove == 3) {
+        human.take(computer, computer.move3);
+      } else if (currentMove == 4) {
+        human.take(computer, computer.move4);
+      }
     } else {
+      Serial.println("IT IS THE OPPONENTS'S TURN");
       int currentMove = waitForMove();
-      attack(p2, p1, currentMove);
+      if (currentMove == 1) {
+        cpu.take(human, human.move1);
+      } else if (currentMove == 2) {
+        cpu.take(human, human.move2);
+      } else if (currentMove == 3) {
+        cpu.take(human, human.move3);
+      } else if (currentMove == 4) {
+        cpu.take(human, human.move4);
+      }
     }
     currTurn++;
   }
@@ -255,19 +279,9 @@ bool battle(Pokemon human, Pokemon cpu) {
   //return who won
   if (cpu.ko) {
     return true; //player has won
+    Serial.println("PLAYER HAS WON!!");
   } else {
     return false; // player has lost
-  }
-}
-
-void attack(Pokemon attacker, Pokemon target, int move) {
-  if (move == 1) {
-    target.take(attacker, attacker.move1);
-  } else if (move == 2) {
-    target.take(attacker, attacker.move2);
-  } else if (move == 3) {
-    target.take(attacker, attacker.move2);
-  } else if (move == 4) {
-    target.take(attacker, attacker.move2);
+    Serial.println("PLAYER HAS LOST!!");
   }
 }

@@ -3,16 +3,7 @@
 
 #include "Arduino.h"
 #include <string.h>
-
-class Move
-{
-  public:
-    String name;
-    String type;
-    int damage;
-    Move(String namep, String typep, int damagep);
-    Move();
-};
+#include "Move.h"
 
 class Pokemon
 {
@@ -22,13 +13,14 @@ class Pokemon
         String name;
         int maxHP;
         int currentHP;
-        Move *move1;
-        Move *move2;
-        Move *move3;
-        Move *move4;
+        Move move1;
+        Move move2;
+        Move move3;
+        Move move4;
         bool ko;
-        Pokemon(String typep, String namep, int maxHPp);
-        take(Pokemon pokemon, Pokemon opp, Move move);
+        Pokemon(String, String, int);
+        void take(Pokemon, Move);
+        void setMove(int, String, String, int);
 };
 
 #endif
