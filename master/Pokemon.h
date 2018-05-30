@@ -19,7 +19,7 @@ class Pokemon
         Move move4;
         bool ko;
         Pokemon(String, String, int);
-        void take(String, Move, int);
+        void take(String, Move, int, bool);
         void setMove(int, String, String, int);
 };
 
