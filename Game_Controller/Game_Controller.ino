@@ -1,3 +1,10 @@
+/*
+   Code for remote team in Pokemon Battle Simulator
+   Kimberly Wong & Gina Lee
+   Joystick code borrowed from: https://www.arduino.cc/en/Tutorial/JoyStick
+   RFID Reader code borrwed from: https://www.brainy-bits.com/card-reader-with-an-arduino-rfid-using-the-rc522-module/
+*/
+
 // LCD setup
 #include "Adafruit_LiquidCrystal.h"
 #include "Wire.h"
@@ -24,15 +31,14 @@ int x = 0;
 int y = 0;
 
 // pull in the move set TEMPORARY
-String moveSet[4] = {"wind", "fire", "water", "ground"};
-//int move]Curr = 0;
+String moveSet[4] = {"Tackle", "Razor Leaf", "Take Down", "Seed Bomb"};
 
 // RFID setup
 // RFID Libraries
 #include <MFRC522.h> // Include of the RC522 Library
 #include <SPI.h> // Used for communication via SPI with the Module
 #define SDAPIN 10 // RFID Module SDA Pin is connected to the UNO 10 Pin
-#define RESETPIN 4 // RFID Module RST Pin is connected to the UNO 8 Pin
+#define RESETPIN 8 // RFID Module RST Pin is connected to the UNO 8 Pin MUST 
 
 byte FoundTag; // Variable used to check if Tag was found
 byte ReadTag; // Variable used to store anti-collision value to read Tag information
@@ -42,6 +48,7 @@ byte GoodTagSerialNumber[5] = {0x95, 0xEB, 0x17, 0x53}; // The Tag Serial number
 
 MFRC522 nfc(SDAPIN, RESETPIN); // Init of the library using the UNO pins declared above
 
+// used later to determine whether player is in battle
 bool inBattle = false;
 
 void setup() {
@@ -51,9 +58,10 @@ void setup() {
   xbee.begin(9600);
   Serial.begin(9600);
   Serial.println( "Arduino started sending bytes via XBee" );
-  // configure pin 7 & 8 as an input and enable the internal pull-up resistor
+
+  // configure pin 7 & 8 as an input and enable the internal pull-up resistor (buttons)
   pinMode(7, INPUT_PULLUP );
-  pinMode(8, INPUT_PULLUP);
+  pinMode(4, INPUT_PULLUP);
 
   // set up the LCD's number of columns and rows:
   lcd.begin(16, 2);
@@ -62,7 +70,8 @@ void setup() {
   lcd.print("   Welcome to");
   lcd.setCursor(0, 1);
   lcd.print("Pokemon Dungeon!");
-  
+  delay(1000);
+
   //RFID setup//
   SPI.begin();
   rfidCheck();
@@ -90,19 +99,20 @@ void checkMessageReceived() {
 
 /* RFID CHECK FUNCTION
    Function is called at the beginning to determine if RFID is there/functioning.
+   Game won't start unless RFID reader is set up
 */
 void rfidCheck() {
   // Start to find an RFID Module
   Serial.println("Looking for RFID Reader");
-  nfc.begin(); // Init MFRC522 
+  nfc.begin(); // Init MFRC522
   byte version = nfc.getFirmwareVersion(); // Variable to store Firmware version of the Module
-  
-  // If can't find an RFID Module 
-  if (! version) { 
+
+  // If can't find an RFID Module
+  if (! version) {
     Serial.print("Didn't find RC522 board.");
-    while(1); //Wait until a RFID Module is found
+    while (1); //Wait until a RFID Module is found
   }
-  
+
   // If found, print the information about the RFID Module
   Serial.print("Found chip RC522 ");
   Serial.print("Firmware version: 0x");
@@ -111,36 +121,41 @@ void rfidCheck() {
 }
 
 void loop() {
-
   // RFID READ IN //
   rfidRead();
 
   // CHECKING XBEE CONNECTIVITY //
   if (start == 0) {
+
+    // telling master unit that remote unit is ready
     xbee.println("player_unit_ready");
     delay(1000);
+
     checkMessageReceived();
     if (msgComplete) {
       if (msg.equals("master_unit_ready")) {
         start = 1;
         Serial.println("MASTER UNIT READY");
         lcd.clear();
-        lcd.setCursor(0,0);
+        lcd.setCursor(0, 0);
         lcd.print("Ready to begin!");
       }
+
       msgComplete = false;
       msg = "";
     }
+    Serial.println("No Signal...");
   }
 
   /************* BUTTONS *************/
   //read the pushbutton value into a variable
   int buttonA = digitalRead(7);
-  int buttonB = digitalRead(8);
+  int buttonB = digitalRead(4);
 
   // Keep in mind the pull-up means the pushbutton's logic is inverted. It goes
-  // HIGH when it's open, and LOW when it's pressed. Turn on pin 13 when the
-  // button's pressed, and off when it's not:
+  // HIGH when it's open, and LOW when it's pressed.
+  // pin 7 = button A or "Select"
+  // pin 4 = button B or "Cancel"
 
   if (buttonA == LOW) {
     lcd.clear();
@@ -162,12 +177,13 @@ void loop() {
   // UP/DOWN // value1: 48 down, 52 neutral, 56 up
   // LEFT/RIGHT // value2: 48 left, 52 neutral, 56 right
 
-  // reads the value of the variable resistor
+  // reads the value of the variable resistor for UP/DOWN
   value1 = analogRead(joyPin1);
   // this small pause is needed between reading
-  // analog pins, otherwise we get the same value twice
-  //  delay(100);
-  // reads the value of the variable resistor
+  // analog pins, otherwise we get the same value twice because joystick
+  // position is being read in too fast
+  delay(100);
+  // reads the value of the variable resistor for LEFT/RIGHT
   value2 = analogRead(joyPin2);
 
   int vertiMove = treatValue(value1);
@@ -178,40 +194,44 @@ void loop() {
   Serial.print("    L/R 2: ");
   Serial.println(vertiMove);
 
-//  xbee.println("player_unit_ready");
-  
-  
   /************* BATTLE *************/
   // this should activate the battle loop. to be replaced w/ an activation from
   // the other remote team
-
   checkMessageReceived();
   if (msgComplete) {
     if (msg.equals("READYTOSTART")) {
       inBattle = true;
     }
+
+    // entering the battle function if inBattle == true
     while (inBattle == true) {
       inBattle = battle(inBattle, joyPin1, joyPin2);
     }
     Serial.println("OUT OF BATTLE");
-    // lcd.setcursor
-    // you won/lost
-    // delay 2 seconds
+    inBattle = false;
   }
+
   /************* OUT OF BATTLE *************/
 
   // MOVING AROUND -- exiting prescribed "battle" state
+  // prints direction of movement on LCD
+
+  lcd.setCursor(0, 0);
   if (horiMove == 48) {
     lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print("Left");
+    lcd.setCursor(0, 0);
+    lcd.print("Moving...");
+    lcd.setCursor(0, 1);
+    lcd.print("Left ");
     Serial.println("lf");
     xbee.println("lf");
     delay(100);
 
   } else if (horiMove == 56) {
     lcd.clear();
-    lcd.setCursor(0,0);
+    lcd.setCursor(0, 0);
+    lcd.print("Moving...");
+    lcd.setCursor(0, 1);
     lcd.print("Right");
     Serial.println("rt");
     xbee.println("rt");
@@ -221,18 +241,34 @@ void loop() {
   // tracking vertical movement
   if (vertiMove == 48) {
     lcd.clear();
-    lcd.setCursor(0,0);
+    lcd.setCursor(0, 0);
+    lcd.print("Moving...");
+    lcd.setCursor(0, 1);
     lcd.print("Down");
     Serial.println("dn");
     xbee.println("dn");
     delay(100);
   } else if (vertiMove == 56) {
     lcd.clear();
-    lcd.setCursor(0,0);
+    lcd.setCursor(0, 0);
+    lcd.print("Moving...");
+    lcd.setCursor(0, 1);
     lcd.print("Up");
     Serial.println("up");
     xbee.println("up");
     delay(100);
+  }
+
+  // reads out messages to player if maze has a block
+  checkMessageReceived();
+  if (msgComplete) {
+    if (msg.equals("Can't go there")) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Can't go there!");
+      lcd.setCursor(0, 1);
+      lcd.print("Go another way");
+    }
   }
   /************* END OF JOYSTICK *************/
 }
@@ -250,8 +286,20 @@ bool battle(bool inBattle, int joyPin1, int joyPin2) {
   int horiRead;
   int vertiMove;
   int horiMove;
+  int moveCount = 0;
 
   while (inBattle = true) {
+    // check if the battle is over
+    checkMessageReceived();
+    if (msgComplete) {
+      if (msg.equals("BATTLEEND")) {
+        inBattle = false;
+        return false;
+      }
+    }
+    msgComplete = false;
+    msg = "";
+
     // reads the up/down value of the variable resistor
     vertiRead = analogRead(joyPin1);
     // reads the L/R value of the variable resistor
@@ -261,7 +309,7 @@ bool battle(bool inBattle, int joyPin1, int joyPin2) {
     horiMove = treatValue(horiRead);
 
     lcd.setCursor(0, 0);
-    
+
     lcd.print("Move Name");
     if (horiMove == 48) {
       lcd.setCursor(0, 1);
@@ -294,15 +342,22 @@ bool battle(bool inBattle, int joyPin1, int joyPin2) {
 
     int buttonA = digitalRead(7);
     int buttonB = digitalRead(8);
-  
+
     // selecting the move
     if (buttonA == LOW) {
       lcd.setCursor(0, 1);
-      xbee.print("move: ");
+      xbee.print("move:");
       xbee.println(String(moveCurr));
-      delay(300);                        
-      Serial.print("move: ");
+      delay(300);
+      Serial.print("move:");
       Serial.println(String(moveCurr));
+      moveCount++;
+
+    }
+
+    if (moveCount == 5) {
+      inBattle = false;
+      return false;
     }
 
     // check if the battle is over
@@ -323,17 +378,17 @@ bool battle(bool inBattle, int joyPin1, int joyPin2) {
    Prints welcome message to new players
 */
 void rfidRead() {
-  String GoodTag="False"; // Variable used to confirm good Tag Detected
+  String GoodTag = "False"; // Variable used to confirm good Tag Detected
 
   // Check to see if a Tag was detected
   // If yes, then the variable FoundTag will contain "MI_OK"
   FoundTag = nfc.requestTag(MF1_REQIDL, TagData);
-  
+
   if (FoundTag == MI_OK) {
     // Get anti-collision value to properly read information from the Tag
     ReadTag = nfc.antiCollision(TagData);
     memcpy(TagSerialNumber, TagData, 4); // Write the Tag information in the TagSerialNumber variable
-    
+
     Serial.println("Tag detected.");
     Serial.print("Serial Number: ");
     for (int i = 0; i < 4; i++) { // Loop to print serial number to serial monitor
@@ -342,30 +397,33 @@ void rfidRead() {
     }
     Serial.println("");
     Serial.println();
-    
-    
-    // Check if detected Tag has the right Serial number we are looking for 
-    for(int i=0; i < 4; i++){
+
+
+    // Check if detected Tag has the right Serial number we are looking for
+    for (int i = 0; i < 4; i++) {
       if (GoodTagSerialNumber[i] != TagSerialNumber[i]) {
         break; // if not equal, then break out of the "for" loop
       }
       if (i == 3) { // if we made it to 4 loops then the Tag Serial numbers are matching
-        GoodTag="TRUE";
-      } 
+        GoodTag = "TRUE";
+      }
     }
-    if (GoodTag == "TRUE"){
-//      Serial.println("Success!!!!!!!");
-      Serial.println("TAG NOT ACCEPTED...... :(");
-    }
-    else {
-//      Serial.println("TAG NOT ACCEPTED...... :(");
-      Serial.println("Success!!!!!!!");
-      lcd.setCursor(0,0);
+    if (GoodTag == "TRUE") {
+      Serial.println("Success!!!");
+      lcd.setCursor(0, 0);
       lcd.print("New player found");
-      lcd.setCursor(0,1);
+      lcd.setCursor(0, 1);
       lcd.print("Welcome!");
       delay(2000);
       lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Let's go!");
+    }
+    else {
+      Serial.println("TAG NOT ACCEPTED... :(");
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Tag not accepted");
     }
   }
 }
