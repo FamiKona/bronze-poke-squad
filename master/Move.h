@@ -4,8 +4,7 @@
 #include "Arduino.h"
 #include <string.h>
 
-class Move
-{
+class Move {
   public:
     String name;
     String moveType;
